@@ -1,42 +1,38 @@
 def generate_plant_message(prediction, explanation):
-    """
-    Converts prediction + explanation into natural language plant communication
-    """
-
     if prediction == "Healthy":
         return {
             "plant_message": (
-                "I'm feeling great 🌿! All conditions are optimal. "
-                "Thank you for taking good care of me."
+                "Plant is healthy. All conditions are optimal. "
+                "Continue with current care routine."
             ),
-            "plant_mood": "😊 Happy"
+            "plant_mood": "Healthy"
         }
 
     elif prediction == "Moderate Stress":
         return {
             "plant_message": (
-                "I'm feeling a bit stressed 😟. "
+                "Plant is experiencing moderate stress. "
                 + " ".join(explanation)
                 + ". Please take corrective action soon."
             ),
-            "plant_mood": "😐 Stressed"
+            "plant_mood": "Stressed"
         }
 
     elif prediction == "High Stress":
         return {
             "plant_message": (
-                "I'm under serious stress 🚨. "
+                "Plant is under serious stress. "
                 + " ".join(explanation)
-                + ". Immediate attention is required to save me."
+                + ". Immediate attention is required."
             ),
-            "plant_mood": "😞 Critical"
+            "plant_mood": "Critical"
         }
 
     else:
         return {
             "plant_message": (
-                "I'm experiencing unusual conditions. "
-                "Please check my environment."
+                "Plant is experiencing unusual conditions. "
+                "Please check the environment."
             ),
-            "plant_mood": "⚠️ Unknown"
+            "plant_mood": "Unknown"
         }

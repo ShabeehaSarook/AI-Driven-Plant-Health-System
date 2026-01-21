@@ -3,53 +3,91 @@ from reportlab.pdfgen import canvas
 from datetime import datetime
 import os
 
+
 def generate_pdf_report(data):
-    # Create reports folder if not exists
-    if not os.path.exists("reports"):
-        os.makedirs("reports")
+    try:
+        required_fields = ["prediction", "confidence", "explanation"]
+        for field in required_fields:
+            if field not in data:
+                raise ValueError(f"Missing required field: {field}")
+        
+        reports_dir = "reports"
+        if not os.path.exists(reports_dir):
+            os.makedirs(reports_dir)
 
-    filename = f"reports/plant_health_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        filename = f"{reports_dir}/plant_health_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
 
-    c = canvas.Canvas(filename, pagesize=A4)
-    width, height = A4
+        c = canvas.Canvas(filename, pagesize=A4)
+        width, height = A4
+        y = height - 50
 
-    y = height - 50
+        c.setFont("Helvetica-Bold", 16)
+        c.drawString(50, y, "Plant Health Report")
+        y -= 40
 
-    c.setFont("Helvetica-Bold", 16)
-    c.drawString(50, y, "AI-Driven Plant Health Report")
-    y -= 40
+        c.setFont("Helvetica", 11)
+        c.drawString(50, y, f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        y -= 30
 
-    c.setFont("Helvetica", 11)
-    c.drawString(50, y, f"Generated on: {datetime.now()}")
-    y -= 30
-
-    c.drawString(50, y, f"Prediction: {data['prediction']}")
-    y -= 20
-
-    c.drawString(50, y, f"Confidence: {data['confidence']}")
-    y -= 30
-
-    c.setFont("Helvetica-Bold", 12)
-    c.drawString(50, y, "Explanation:")
-    y -= 20
-
-    c.setFont("Helvetica", 11)
-    for reason in data["explanation"]:
-        c.drawString(70, y, f"- {reason}")
-        y -= 18
-
-    y -= 20
-
-    if data.get("plant_message"):
         c.setFont("Helvetica-Bold", 12)
-        c.drawString(50, y, "Plant Message:")
+        c.drawString(50, y, "Prediction:")
+        c.setFont("Helvetica", 11)
+        c.drawString(150, y, str(data['prediction']))
+        y -= 25
+
+        c.setFont("Helvetica-Bold", 12)
+        c.drawString(50, y, "Confidence:")
+        c.setFont("Helvetica", 11)
+        c.drawString(150, y, str(data['confidence']))
+        y -= 35
+
+        c.setFont("Helvetica-Bold", 12)
+        c.drawString(50, y, "Explanation:")
         y -= 20
 
         c.setFont("Helvetica", 11)
-        c.drawString(70, y, data["plant_message"]["plant_message"])
+        for reason in data["explanation"]:
+            if y < 100:
+                c.showPage()
+                y = height - 50
+                c.setFont("Helvetica", 11)
+            c.drawString(70, y, f"- {reason}")
+            y -= 18
+
         y -= 20
 
-    c.showPage()
-    c.save()
+        if data.get("plant_message"):
+            if y < 150:
+                c.showPage()
+                y = height - 50
+            
+            c.setFont("Helvetica-Bold", 12)
+            c.drawString(50, y, "Plant Message:")
+            y -= 20
 
-    return filename
+            c.setFont("Helvetica", 11)
+            plant_msg = data["plant_message"].get("plant_message", "")
+            
+            words = plant_msg.split()
+            line = ""
+            for word in words:
+                test_line = line + word + " "
+                if c.stringWidth(test_line, "Helvetica", 11) < (width - 140):
+                    line = test_line
+                else:
+                    c.drawString(70, y, line)
+                    y -= 18
+                    line = word + " "
+                    if y < 100:
+                        c.showPage()
+                        y = height - 50
+                        c.setFont("Helvetica", 11)
+            if line:
+                c.drawString(70, y, line)
+
+        c.showPage()
+        c.save()
+        return filename
+    
+    except Exception as e:
+        raise Exception(f"Failed to generate PDF report: {str(e)}")

@@ -1,18 +1,24 @@
 import joblib
 import numpy as np
+import pandas as pd
+from pathlib import Path
+import sys
 
-# Explainable AI
 from utils.explain_prediction import generate_explanation
 from utils.plant_communication import generate_plant_message
 
-# ================================
-# LOAD TRAINED MODEL
-# ================================
-model = joblib.load("models/plant_model.pkl")
+BASE_DIR = Path(__file__).resolve().parent
+MODEL_PATH = BASE_DIR / "models" / "plant_model.pkl"
 
-# ================================
-# FEATURE ORDER (MUST MATCH TRAINING)
-# ================================
+try:
+    model = joblib.load(MODEL_PATH)
+except FileNotFoundError:
+    print(f"Model file not found. Please run 'python train_model.py' first.")
+    sys.exit(1)
+except Exception as e:
+    print(f"Failed to load model: {e}")
+    sys.exit(1)
+
 FEATURES = [
     'Plant_ID',
     'Soil_Moisture',
@@ -28,50 +34,34 @@ FEATURES = [
     'Electrochemical_Signal'
 ]
 
-# ================================
-# CORE PREDICTION FUNCTION
-# ================================
+
 def predict_with_confidence(input_data: dict):
-    """
-    Returns:
-    - prediction
-    - confidence
-    - explanation
-    - plant_message
-    """
+    missing_features = [f for f in FEATURES if f not in input_data]
+    if missing_features:
+        raise ValueError(f"Missing required features: {missing_features}")
+    
+    try:
+        values = [input_data[feature] for feature in FEATURES]
+        X = pd.DataFrame([values], columns=FEATURES)
 
-    # Convert input dict to numpy array
-    values = [input_data[feature] for feature in FEATURES]
-    X = np.array(values).reshape(1, -1)
+        prediction = model.predict(X)[0]
+        probabilities = model.predict_proba(X)[0]
+        confidence = round(max(probabilities) * 100, 2)
 
-    # Prediction
-    prediction = model.predict(X)[0]
+        explanation = generate_explanation(model, FEATURES, X)
+        plant_message = generate_plant_message(prediction, explanation)
 
-    # Confidence
-    probabilities = model.predict_proba(X)[0]
-    confidence = round(max(probabilities) * 100, 2)
+        return {
+            "prediction": prediction,
+            "confidence": f"{confidence}%",
+            "explanation": explanation,
+            "plant_message": plant_message
+        }
+    except Exception as e:
+        raise Exception(f"Prediction failed: {str(e)}")
 
-    # Explainable AI
-    explanation = generate_explanation(model, FEATURES, X)
 
-    # Plant communication
-    plant_message = generate_plant_message(prediction, explanation)
-
-    return {
-        "prediction": prediction,
-        "confidence": f"{confidence}%",
-        "explanation": explanation,
-        "plant_message": plant_message
-    }
-
-# ================================
-# STEP 9 — WHAT-IF SIMULATION
-# ================================
 def what_if_simulation(base_input: dict, changes: dict):
-    """
-    Simulates changes in environment and re-predicts plant health
-    """
-
     simulated_input = base_input.copy()
 
     for key, value in changes.items():
@@ -80,11 +70,8 @@ def what_if_simulation(base_input: dict, changes: dict):
 
     return predict_with_confidence(simulated_input)
 
-# ================================
-# LOCAL TESTING
-# ================================
-if __name__ == "__main__":
 
+if __name__ == "__main__":
     print("\n--- ORIGINAL PREDICTION ---")
 
     sample_input = {
