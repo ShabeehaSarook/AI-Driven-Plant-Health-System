@@ -1,0 +1,25 @@
+{
+  "model_path": "models\\plant_model.pkl",
+  "trained_at_utc": "20260213_155734",
+  "model_version": "rf_20260213_155734",
+  "algorithm": "RandomForestClassifier",
+  "n_features": 12,
+  "feature_names": [
+    "Plant_ID",
+    "Soil_Moisture",
+    "Ambient_Temperature",
+    "Soil_Temperature",
+    "Humidity",
+    "Light_Intensity",
+    "Soil_pH",
+    "Nitrogen_Level",
+    "Phosphorus_Level",
+    "Potassium_Level",
+    "Chlorophyll_Content",
+    "Electrochemical_Signal"
+  ],
+  "metrics": {
+    "accuracy": 1.0,
+    "accuracy_percent": 100.0
+  }
+}
